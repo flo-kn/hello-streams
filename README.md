@@ -42,13 +42,4 @@ make build
 (cd coffee-shop-service && make run)
 (cd coffee-shop && make run)
 ```
-
-
-### TODO
-
-- [ ] Build and test run the other services
-- [x] Replace ksql stuff with new
-	•	cp-ksqldb-server
-	•	cp-ksqldb-cli
-- Run everything together
-- Observe the connect-datagen thingy
+- [ ] Replace zookeeper with RAFT
