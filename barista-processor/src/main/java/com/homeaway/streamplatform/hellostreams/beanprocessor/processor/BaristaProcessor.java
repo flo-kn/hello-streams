@@ -12,7 +12,6 @@ import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.Topology;
 import org.apache.kafka.streams.kstream.Consumed;
 import org.apache.kafka.streams.kstream.Produced;
-import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -20,6 +19,7 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -85,10 +85,10 @@ public class BaristaProcessor {
             Thread.sleep(baristaWaitMs/4);  // sleep time = brew time / 4
         } catch (InterruptedException ignored) {}
 
-        OrderCompleted orderCompleted = OrderCompleted.newBuilder()
+            OrderCompleted orderCompleted = OrderCompleted.newBuilder()
                 .setId(UUID.randomUUID().toString())
                 .setOrderId(order.getOrderId())
-                .setCreated(DateTime.now())
+                .setCreated(Instant.now())
                 .build();
         log.info("Sending orderCompleted={}", orderCompleted);
         return orderCompleted;

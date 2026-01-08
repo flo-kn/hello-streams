@@ -25,7 +25,6 @@ import org.apache.kafka.streams.state.KeyValueStore;
 import org.apache.kafka.streams.state.QueryableStoreTypes;
 import org.apache.kafka.streams.state.ReadOnlyKeyValueStore;
 import org.apache.kafka.streams.StoreQueryParameters;
-import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -33,6 +32,7 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
@@ -121,7 +121,7 @@ public class BeanProcessor {
 
     /** called to initialize the bean supply */
     private BeanSupply initBeanSupply() {
-        DateTime now = DateTime.now();
+        Instant now = Instant.now();
         return BeanSupply.newBuilder()
                 .setId(UUID.randomUUID().toString())
                 .setBeansAvailable(initialBeansAvailable) // set to initialBeansAvailable
@@ -144,7 +144,7 @@ public class BeanProcessor {
 
         if(beanSupply.getBeansAvailable() >= requestedBeans) {
             log.info("Accepting beanSupplyRequested event of {} beans", requestedBeans);
-            BeanSupplyAccepted supplyAccepted = buildBeanSupplyAccepted(beanSupplyRequested);
+            return buildBeanSupplyAccepted(beanSupplyRequested);
         }
         log.info("Rejecting beanSupplyRequested event of {} beans", requestedBeans);
         return buildBeanSupplyRejected(beanSupplyRequested);
@@ -155,7 +155,7 @@ public class BeanProcessor {
                 .setId(UUID.randomUUID().toString())
                 .setOrderId(beanSupplyRequested.getOrderId())
                 .setBeansAccepted(beanSupplyRequested.getBeansRequested())
-                .setCreated(DateTime.now())
+                .setCreated(Instant.now())
                 .build();
     }
 
@@ -164,7 +164,7 @@ public class BeanProcessor {
                 .setId(UUID.randomUUID().toString())
                 .setOrderId(beanSupplyRequested.getOrderId())
                 .setBeansRejected(beanSupplyRequested.getBeansRequested())
-                .setCreated(DateTime.now())
+                .setCreated(Instant.now())
                 .build();
     }
 
@@ -211,7 +211,7 @@ public class BeanProcessor {
     }
 
     private BeanSupply updateBeanSupplyDate(BeanSupply beanSupply) {
-        beanSupply.setUpdated(DateTime.now());
+        beanSupply.setUpdated(Instant.now());
         return beanSupply;
     }
 

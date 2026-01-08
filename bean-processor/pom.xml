@@ -19,7 +19,7 @@
         <lombok.version>1.18.4</lombok.version>
         <graphql-spring-boot.version>5.7.0</graphql-spring-boot.version>
         <kafka.version>2.8.1</kafka.version>
-        <confluent.version>5.2.1</confluent.version>
+        <confluent.version>7.5.0</confluent.version>
         <!-- kotlin is required to build! -->
         <kotlin.version>1.3.10</kotlin.version>
     </properties>

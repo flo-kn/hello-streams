@@ -9,7 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
-import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.DependsOn;
@@ -93,7 +92,7 @@ public class BeanDao {
     private ProducerRecord<String,com.homeaway.streamplatform.hellostreams.BeanSupplied> createProducerRecord(com.homeaway.streamplatform.hellostreams.BeanSupplied beanSuppliedEvent) {
         return new ProducerRecord<>(
                 beanCommandsStream, null,
-                beanSuppliedEvent.getCreated().getMillis(), // timestamp
+                beanSuppliedEvent.getCreated().toEpochMilli(), // timestamp
                 GLOBAL_KEY, // use fixed key so that all bean supply events get aggregated into same partition
                 beanSuppliedEvent);
     }
@@ -107,9 +106,8 @@ public class BeanDao {
         return dto;
     }
 
-    private ZonedDateTime toDTOTime(DateTime avroTime) {
-        return ZonedDateTime.ofInstant(Instant.ofEpochMilli(avroTime.getMillis()),
-                BeanProcessorUtils.UTC_ZONE_ID);
+    private ZonedDateTime toDTOTime(Instant avroTime) {
+        return ZonedDateTime.ofInstant(avroTime, BeanProcessorUtils.UTC_ZONE_ID);
     }
 
     private com.homeaway.streamplatform.hellostreams.BeanSupplied createBeanSuppliedEvent(String actorId, int numBeans) {
@@ -117,7 +115,7 @@ public class BeanDao {
         .setId(UUID.randomUUID().toString())
         .setActorId(actorId)
         .setBeansSupplied(numBeans)
-        .setCreated(DateTime.now())
+        .setCreated(Instant.now())
         .build();
     }
 }
