@@ -1,0 +1,142 @@
+---
+version: '3.8'
+
+services:
+  # Confluent Stack Services
+  zookeeper:
+    image: confluentinc/cp-zookeeper:5.2.1
+    hostname: zookeeper
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - hello-streams-network
+
+  broker:
+    image: confluentinc/cp-enterprise-kafka:5.2.1
+    hostname: broker
+    container_name: broker
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: broker:9092
+      CONFLUENT_METRICS_REPORTER_ZOOKEEPER_CONNECT: zookeeper:2181
+      CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
+      CONFLUENT_METRICS_ENABLE: 'true'
+      CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
+    networks:
+      - hello-streams-network
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry:5.2.1
+    hostname: schema-registry
+    container_name: schema-registry
+    depends_on:
+      - zookeeper
+      - broker
+    ports:
+      - "8081:8081"
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: 'zookeeper:2181'
+    networks:
+      - hello-streams-network
+
+  # Java Microservices
+  order-processor:
+    image: order-processor:latest
+    container_name: order-processor
+    depends_on:
+      - broker
+      - schema-registry
+    ports:
+      - "5000:5000"
+    environment:
+      JAVA_OPTS: -Dorder-processor.bootstrap.servers=PLAINTEXT://broker:9092 -Dorder-processor.schema.registry.url=http://schema-registry:8081
+    command: ["sh", "-c", "java $$JAVA_OPTS -jar target/order-processor-*-SNAPSHOT.jar"]
+    networks:
+      - hello-streams-network
+
+  bean-processor:
+    image: bean-processor:latest
+    container_name: bean-processor
+    depends_on:
+      - broker
+      - schema-registry
+    ports:
+      - "5100:5100"
+    environment:
+      JAVA_OPTS: -Dprocessor.bootstrap.servers=PLAINTEXT://broker:9092 -Dprocessor.schema.registry.url=http://schema-registry:8081
+    command: ["sh", "-c", "java $$JAVA_OPTS -jar target/bean-processor-*-SNAPSHOT.jar"]
+    networks:
+      - hello-streams-network
+
+  barista-processor:
+    image: barista-processor:latest
+    container_name: barista-processor
+    depends_on:
+      - broker
+      - schema-registry
+    ports:
+      - "5200:5200"
+    environment:
+      JAVA_OPTS: -Dbarista-processor.bootstrap.servers=PLAINTEXT://broker:9092 -Dbarista-processor.schema.registry.url=http://schema-registry:8081
+    command: ["sh", "-c", "java $$JAVA_OPTS -jar target/barista-processor-*-SNAPSHOT.jar"]
+    networks:
+      - hello-streams-network
+
+  order-cleaner:
+    image: order-cleaner:latest
+    container_name: order-cleaner
+    depends_on:
+      - broker
+      - schema-registry
+    ports:
+      - "5300:5300"
+    environment:
+      JAVA_OPTS: -Dorder-cleaner.bootstrap.servers=PLAINTEXT://broker:9092 -Dorder-cleaner.schema.registry.url=http://schema-registry:8081
+    command: ["sh", "-c", "java $$JAVA_OPTS -jar target/order-cleaner-*-SNAPSHOT.jar"]
+    networks:
+      - hello-streams-network
+
+  # Node.js Services
+  coffee-shop-service:
+    image: coffee-shop-service:latest
+    container_name: coffee-shop-service
+    depends_on:
+      - order-processor
+      - bean-processor
+    ports:
+      - "4000:4000"
+    networks:
+      - hello-streams-network
+
+  coffee-shop:
+    image: coffee-shop:latest
+    container_name: coffee-shop
+    depends_on:
+      - coffee-shop-service
+    ports:
+      - "3000:3000"
+    environment:
+      SKIP_PREFLIGHT_CHECK: "true"
+      WATCHPACK_POLLING: "true"
+    networks:
+      - hello-streams-network
+
+networks:
+  hello-streams-network:
+    driver: bridge

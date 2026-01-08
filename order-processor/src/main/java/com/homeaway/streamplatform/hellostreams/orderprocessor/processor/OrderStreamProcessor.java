@@ -31,6 +31,7 @@ import org.apache.kafka.streams.state.KeyValueIterator;
 import org.apache.kafka.streams.state.KeyValueStore;
 import org.apache.kafka.streams.state.QueryableStoreTypes;
 import org.apache.kafka.streams.state.ReadOnlyKeyValueStore;
+import org.apache.kafka.streams.StoreQueryParameters;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -344,7 +345,9 @@ public class OrderStreamProcessor {
 
             // load up store
             try {
-                readOnlyStore = orderStreamProcessor.store(ORDER_STORE_NAME, QueryableStoreTypes.keyValueStore());
+                readOnlyStore = orderStreamProcessor.store(
+                    StoreQueryParameters.fromNameAndType(ORDER_STORE_NAME, QueryableStoreTypes.keyValueStore())
+                );
             } catch (Exception exception) {
                 log.info("Could not load readOnlyStore. Retrying.", exception);
             }

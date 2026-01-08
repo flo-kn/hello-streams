@@ -1,4 +1,5 @@
 .PHONY: start-confluent register-streams build stop-confluent reset-processors delete-topics reset
+.PHONY: docker-build docker-up docker-down docker-logs docker-ps docker-restart docker-clean
 
 start-confluent:
 	echo "starting confluent stack..."
@@ -45,3 +46,39 @@ delete-topics:
 	kafka-topics --bootstrap-server localhost:9092 --topic order-command-events --delete
 
 reset: reset-processors delete-topics register-streams
+
+# Docker Compose targets
+docker-build:
+	echo "Building all Docker images..."
+	docker-compose build
+
+docker-up:
+	echo "Starting all services with Docker Compose..."
+	docker-compose up -d
+
+docker-down:
+	echo "Stopping all services..."
+	docker-compose down
+
+docker-logs:
+	docker-compose logs -f
+
+docker-ps:
+	docker-compose ps
+
+docker-restart:
+	echo "Restarting all services..."
+	docker-compose restart
+
+docker-clean:
+	echo "Stopping and removing all containers, networks, and volumes..."
+	docker-compose down -v
+	docker system prune -f
+
+# Start everything (infrastructure + services)
+docker-start-all: docker-up
+	echo "All services started! Access the coffee shop at http://localhost:3000"
+
+# Stop everything
+docker-stop-all: docker-down
+	echo "All services stopped"

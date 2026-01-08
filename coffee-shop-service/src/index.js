@@ -10,11 +10,11 @@ import fetch from "node-fetch";
 
 global.fetch =  fetch;
 const client = new ApolloClient({
-  uri: "http://localhost:5000/graphql",
+  uri: process.env.ORDER_PROCESSOR_URL || "http://localhost:5000/graphql",
 });
 
 const beanClient = new ApolloClient({
-  uri: "http://localhost:5100/graphql",
+  uri: process.env.BEAN_PROCESSOR_URL || "http://localhost:5100/graphql",
 });
 
 let customers = {};
