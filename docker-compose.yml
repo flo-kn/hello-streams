@@ -1,0 +1,187 @@
+---
+version: '3.8'
+
+services:
+  # Confluent Stack Services
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    hostname: zookeeper
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_4LW_COMMANDS_WHITELIST: "srvr,mntr,ruok"
+    healthcheck:
+      test: ["CMD", "bash", "-c", "echo srvr | nc localhost 2181 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - hello-streams-network
+
+  broker:
+    image: confluentinc/cp-kafka:7.5.0
+    hostname: broker
+    container_name: broker
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "broker:9092"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 40s
+    networks:
+      - hello-streams-network
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry:7.5.0
+    hostname: schema-registry
+    container_name: schema-registry
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+      broker:
+        condition: service_healthy
+    ports:
+      - "8081:8081"
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'broker:9092'
+      SCHEMA_REGISTRY_LISTENERS: 'http://0.0.0.0:8081'
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - hello-streams-network
+
+  # Java Microservices
+  order-processor:
+    image: order-processor:latest
+    container_name: order-processor
+    depends_on:
+      broker:
+        condition: service_healthy
+      schema-registry:
+        condition: service_healthy
+    ports:
+      - "5001:5000"
+    volumes:
+      - order-processor-state:/tmp/kafka-streams
+    environment:
+      JAVA_OPTS: -Dorder-processor.bootstrap.servers=PLAINTEXT://broker:9092 -Dorder-processor.schema.registry.url=http://schema-registry:8081 -Dorder-processor.write.wait.timeout=120000
+    command: ["sh", "-c", "sleep 30 && java $$JAVA_OPTS -jar target/order-processor-*-SNAPSHOT.jar"]
+    restart: on-failure
+    networks:
+      - hello-streams-network
+
+  bean-processor:
+    image: bean-processor:latest
+    container_name: bean-processor
+    depends_on:
+      broker:
+        condition: service_healthy
+      schema-registry:
+        condition: service_healthy
+    ports:
+      - "5100:5100"
+    volumes:
+      - bean-processor-state:/tmp/kafka-streams
+    environment:
+      JAVA_OPTS: -Dprocessor.bootstrap.servers=PLAINTEXT://broker:9092 -Dprocessor.schema.registry.url=http://schema-registry:8081 -Dprocessor.write.wait.timeout=120000
+    command: ["sh", "-c", "sleep 35 && java $$JAVA_OPTS -jar target/bean-processor-*-SNAPSHOT.jar"]
+    restart: on-failure
+    networks:
+      - hello-streams-network
+
+  barista-processor:
+    image: barista-processor:latest
+    container_name: barista-processor
+    depends_on:
+      schema-registry:
+        condition: service_healthy
+    ports:
+      - "5200:5200"
+    volumes:
+      - barista-processor-state:/tmp/kafka-streams
+    environment:
+      JAVA_OPTS: -Dprocessor.bootstrap.servers=PLAINTEXT://broker:9092 -Dprocessor.schema.registry.url=http://schema-registry:8081 -Dprocessor.write.wait.timeout=300000
+    command: ["sh", "-c", "sleep 30 && java $$JAVA_OPTS -jar target/barista-processor-*-SNAPSHOT.jar"]
+    networks:
+      - hello-streams-network
+
+  order-cleaner:
+    image: order-cleaner:latest
+    container_name: order-cleaner
+    depends_on:
+      broker:
+        condition: service_healthy
+      schema-registry:
+        condition: service_healthy
+    ports:
+      - "5300:5300"
+    volumes:
+      - order-cleaner-state:/tmp/kafka-streams
+    environment:
+      JAVA_OPTS: -Dorder-cleaner.bootstrap.servers=PLAINTEXT://broker:9092 -Dorder-cleaner.schema.registry.url=http://schema-registry:8081 -Dorder-cleaner.write.wait.timeout=120000
+    command: ["sh", "-c", "sleep 45 && java $$JAVA_OPTS -jar target/order-cleaner-*-SNAPSHOT.jar"]
+    restart: on-failure
+    networks:
+      - hello-streams-network
+
+  # Node.js Services
+  coffee-shop-service:
+    image: coffee-shop-service:latest
+    container_name: coffee-shop-service
+    depends_on:
+      - order-processor
+      - bean-processor
+    ports:
+      - "4000:4000"
+    environment:
+      ORDER_PROCESSOR_URL: "http://order-processor:5000/graphql"
+      BEAN_PROCESSOR_URL: "http://bean-processor:5100/graphql"
+    networks:
+      - hello-streams-network
+
+  coffee-shop:
+    image: coffee-shop:latest
+    container_name: coffee-shop
+    depends_on:
+      - coffee-shop-service
+    ports:
+      - "3000:3000"
+    stdin_open: true
+    tty: true
+    environment:
+      SKIP_PREFLIGHT_CHECK: "true"
+      WATCHPACK_POLLING: "true"
+    networks:
+      - hello-streams-network
+
+networks:
+  hello-streams-network:
+    driver: bridge
+
+volumes:
+  order-processor-state:
+  bean-processor-state:
+  barista-processor-state:
+  order-cleaner-state:

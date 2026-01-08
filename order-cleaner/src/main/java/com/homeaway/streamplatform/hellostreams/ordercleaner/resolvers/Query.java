@@ -22,6 +22,6 @@ public class Query implements GraphQLQueryResolver {
     }
 
     public ZonedDateTime getNextCleanTime() {
-        return ZonedDateTime.ofInstant(Instant.ofEpochMilli(orderCleanerTask.getNextStartTime().toInstant().getMillis()), OrderCleanerUtils.UTC_ZONE_ID);
+        return ZonedDateTime.ofInstant(orderCleanerTask.getNextStartTime(), OrderCleanerUtils.UTC_ZONE_ID);
     }
 }

@@ -42,3 +42,4 @@ make build
 (cd coffee-shop-service && make run)
 (cd coffee-shop && make run)
 ```
+- [ ] Replace zookeeper with RAFT

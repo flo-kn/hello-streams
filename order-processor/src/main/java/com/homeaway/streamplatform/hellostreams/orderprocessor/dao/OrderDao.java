@@ -9,7 +9,6 @@ import org.apache.avro.specific.SpecificRecord;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
-import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.DependsOn;
@@ -18,6 +17,7 @@ import org.springframework.stereotype.Repository;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Future;
@@ -96,7 +96,7 @@ public class OrderDao {
             log.info("Writing orderPlaced={} to kafka.", orderPlacedEvent);
             Future<RecordMetadata> resultFuture = kafkaOrderEventProducer.send(new ProducerRecord<>(
                     orderCommandsStream, null,
-                    orderPlacedEvent.getCreated().getMillis(),
+                    orderPlacedEvent.getCreated().toEpochMilli(),
                     orderPlacedEvent.getOrderId(), // use order key to make order aggregate easier!!
                     orderPlacedEvent));
             // sync wait for response
@@ -115,7 +115,7 @@ public class OrderDao {
                 .setOrderId(UUID.randomUUID().toString())
                 .setCustomerId(customerId)
                 .setItem(item)
-                .setCreated(DateTime.now())
+                .setCreated(Instant.now())
                 .build();
     }
 }

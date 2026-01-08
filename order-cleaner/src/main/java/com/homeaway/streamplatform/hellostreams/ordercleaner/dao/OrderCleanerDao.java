@@ -9,7 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
-import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.DependsOn;
@@ -65,9 +64,8 @@ public class OrderCleanerDao {
         return order;
     }
 
-    private ZonedDateTime toDTOTime(DateTime avroTime) {
-        return ZonedDateTime.ofInstant(Instant.ofEpochMilli(avroTime.getMillis()),
-                OrderCleanerUtils.UTC_ZONE_ID);
+    private ZonedDateTime toDTOTime(Instant avroTime) {
+        return ZonedDateTime.ofInstant(avroTime, OrderCleanerUtils.UTC_ZONE_ID);
     }
 
     public Order deleteOrder(String orderId) {
@@ -94,7 +92,7 @@ public class OrderCleanerDao {
     private ProducerRecord<String, OrderDeleted> createProducerRecord(com.homeaway.streamplatform.hellostreams.OrderDeleted  orderDeletedEvent) {
         return new ProducerRecord<>(
                 orderCommandsStream, null,
-                orderDeletedEvent.getCreated().getMillis(),
+                orderDeletedEvent.getCreated().toEpochMilli(),
                 orderDeletedEvent.getOrderId(), // use order key to make order aggregate easier!!
                 orderDeletedEvent);
     }
@@ -114,7 +112,7 @@ public class OrderCleanerDao {
         return com.homeaway.streamplatform.hellostreams.OrderDeleted.newBuilder()
                 .setId(UUID.randomUUID().toString())
                 .setOrderId(orderId)
-                .setCreated(DateTime.now())
+                .setCreated(Instant.now())
                 .build();
     }
 }

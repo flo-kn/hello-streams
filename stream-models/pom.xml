@@ -16,7 +16,7 @@
         <stream-event-name>OrderCommandEvent</stream-event-name>
 
         <!-- When changing this value, you must update the templates in the api module to the corresponding version -->
-        <avro.version>1.8.2</avro.version>
+        <avro.version>1.11.3</avro.version>
         <!-- Used for development!! -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <schema.registry.url>http://localhost:8081</schema.registry.url>
@@ -159,11 +159,6 @@
             <artifactId>avro</artifactId>
         </dependency>
         <dependency>
-            <groupId>joda-time</groupId>
-            <artifactId>joda-time</artifactId>
-            <version>2.10.1</version>
-        </dependency>
-        <dependency>
             <groupId>org.apache.avro</groupId>
             <artifactId>avro-tools</artifactId>
             <scope>provided</scope>
@@ -286,7 +281,7 @@
                 <plugin>
                     <groupId>org.apache.avro</groupId>
                     <artifactId>avro-maven-plugin</artifactId>
-                    <version>1.8.2</version>
+                    <version>1.11.3</version>
                     <executions>
                         <execution>
                             <phase>generate-sources</phase>
