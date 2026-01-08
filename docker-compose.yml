@@ -115,8 +115,6 @@ services:
     image: barista-processor:latest
     container_name: barista-processor
     depends_on:
-      broker:
-        condition: service_healthy
       schema-registry:
         condition: service_healthy
     ports:
@@ -124,9 +122,8 @@ services:
     volumes:
       - barista-processor-state:/tmp/kafka-streams
     environment:
-      JAVA_OPTS: -Dbarista-processor.bootstrap.servers=PLAINTEXT://broker:9092 -Dbarista-processor.schema.registry.url=http://schema-registry:8081 -Dbarista-processor.write.wait.timeout=120000
-    command: ["sh", "-c", "sleep 40 && java $$JAVA_OPTS -jar target/barista-processor-*-SNAPSHOT.jar"]
-    restart: on-failure
+      JAVA_OPTS: -Dprocessor.bootstrap.servers=PLAINTEXT://broker:9092 -Dprocessor.schema.registry.url=http://schema-registry:8081 -Dprocessor.write.wait.timeout=300000
+    command: ["sh", "-c", "sleep 30 && java $$JAVA_OPTS -jar target/barista-processor-*-SNAPSHOT.jar"]
     networks:
       - hello-streams-network
 
