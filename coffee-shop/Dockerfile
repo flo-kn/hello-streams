@@ -15,6 +15,8 @@ COPY coffee-shop/public ./public
 # Set environment variables for React dev server in Docker
 ENV SKIP_PREFLIGHT_CHECK=true
 ENV WATCHPACK_POLLING=true
+ENV BROWSERSLIST_IGNORE_OLD_DATA=true
+ENV CI=true
 
 # Expose port 3000 (default for create-react-app)
 EXPOSE 3000

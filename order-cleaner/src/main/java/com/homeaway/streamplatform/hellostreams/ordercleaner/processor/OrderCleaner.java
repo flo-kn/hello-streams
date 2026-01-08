@@ -15,6 +15,7 @@ import org.apache.kafka.streams.kstream.Materialized;
 import org.apache.kafka.streams.state.KeyValueStore;
 import org.apache.kafka.streams.state.QueryableStoreTypes;
 import org.apache.kafka.streams.state.ReadOnlyKeyValueStore;
+import org.apache.kafka.streams.StoreQueryParameters;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -123,7 +124,9 @@ public class OrderCleaner {
 
             // load up store
             try {
-                readOnlyStore = streamProcessor.store(ORDER_STORE_NAME, QueryableStoreTypes.keyValueStore());
+                readOnlyStore = streamProcessor.store(
+                    StoreQueryParameters.fromNameAndType(ORDER_STORE_NAME, QueryableStoreTypes.keyValueStore())
+                );
             } catch (Exception exception) {
                 log.error("Could not load readOnlyStore. Retrying.", exception);
             }
