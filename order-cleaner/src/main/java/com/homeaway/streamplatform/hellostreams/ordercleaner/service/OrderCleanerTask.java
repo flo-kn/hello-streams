@@ -3,13 +3,13 @@ package com.homeaway.streamplatform.hellostreams.ordercleaner.service;
 import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import lombok.extern.slf4j.Slf4j;
-import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import java.time.Instant;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -66,8 +66,8 @@ public class OrderCleanerTask {
         executor.submit(this::cleanOrders);
     }
 
-    public DateTime getNextStartTime() {
-        return new DateTime(nextStartTime);
+    public Instant getNextStartTime() {
+        return Instant.ofEpochMilli(nextStartTime);
     }
 
     private void waitForClean() {

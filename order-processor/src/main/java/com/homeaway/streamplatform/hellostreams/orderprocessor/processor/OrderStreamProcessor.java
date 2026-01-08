@@ -1,7 +1,7 @@
 package com.homeaway.streamplatform.hellostreams.orderprocessor.processor;
 
-import avro.shaded.com.google.common.collect.Lists;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.homeaway.streamplatform.hellostreams.BeanSupplyAccepted;
 import com.homeaway.streamplatform.hellostreams.BeanSupplyRejected;
@@ -32,7 +32,6 @@ import org.apache.kafka.streams.state.KeyValueStore;
 import org.apache.kafka.streams.state.QueryableStoreTypes;
 import org.apache.kafka.streams.state.ReadOnlyKeyValueStore;
 import org.apache.kafka.streams.StoreQueryParameters;
-import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -138,10 +137,10 @@ public class OrderStreamProcessor {
     }
 
     private KeyValue<String, SpecificRecord> beanSupplyAccepted(String key, BeanSupplyAccepted beanCommandEvent) {
-        OrderAccepted orderAccepted = OrderAccepted.newBuilder()
+            OrderAccepted orderAccepted = OrderAccepted.newBuilder()
                 .setId(UUID.randomUUID().toString())
                 .setOrderId(beanCommandEvent.getOrderId())
-                .setCreated(DateTime.now())
+                .setCreated(Instant.now())
                 .build();
         log.info("Accepting order={}", orderAccepted);
         // order by orderId
@@ -149,10 +148,10 @@ public class OrderStreamProcessor {
     }
 
     private KeyValue<String, SpecificRecord> beanSupplyRejected(String key, BeanSupplyRejected beanCommandEvent) {
-        OrderRejected orderRejected = OrderRejected.newBuilder()
+            OrderRejected orderRejected = OrderRejected.newBuilder()
                 .setId(UUID.randomUUID().toString())
                 .setOrderId(beanCommandEvent.getOrderId())
-                .setCreated(DateTime.now())
+                .setCreated(Instant.now())
                 .build();
         log.info("Rejecting order={}", orderRejected);
         // order by orderId
@@ -164,7 +163,7 @@ public class OrderStreamProcessor {
                 .setId(UUID.randomUUID().toString())
                 .setOrderId(order.getOrderId())
                 .setBeansRequested(lookupBeans(order.getItem()))
-                .setCreated(DateTime.now())
+                .setCreated(Instant.now())
                 .build();
         log.info("Requesting {}", beanSupplyRequested);
         return KeyValue.pair("beans", beanSupplyRequested);
@@ -293,7 +292,7 @@ public class OrderStreamProcessor {
     }
 
     private Order createOrder(OrderPlaced orderPlaced) {
-        DateTime now = DateTime.now();
+        Instant now = Instant.now();
         Order order = Order.newBuilder()
                 .setOrderId(orderPlaced.getOrderId())
                 .setId(orderPlaced.getId())
@@ -308,7 +307,7 @@ public class OrderStreamProcessor {
     }
 
     private Order updateOrderState(Order order, String state) {
-        DateTime now = DateTime.now();
+        Instant now = Instant.now();
         order.setState(state);
         order.setUpdated(now);
         return order;
@@ -409,8 +408,7 @@ public class OrderStreamProcessor {
         return order;
     }
 
-    public ZonedDateTime toDTOTime(DateTime avroTime) {
-        return ZonedDateTime.ofInstant(Instant.ofEpochMilli(avroTime.getMillis()),
-                OrderProcessorUtils.UTC_ZONE_ID);
+    public ZonedDateTime toDTOTime(Instant avroTime) {
+        return ZonedDateTime.ofInstant(avroTime, OrderProcessorUtils.UTC_ZONE_ID);
     }
 }
