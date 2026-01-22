@@ -67,9 +67,9 @@ make build
 
 ### TODO
 
-- [ ] Build and test run the other services
+- [x] Build and test run the other services
 - [x] Replace ksql stuff with new
 	•	cp-ksqldb-server
 	•	cp-ksqldb-cli
-- Run everything together
-- Observe the connect-datagen thingy
+- [x] Run everything together
+- [ ] Observe the connect-datagen thingy
