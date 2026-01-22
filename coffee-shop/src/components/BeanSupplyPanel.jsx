@@ -44,10 +44,10 @@ class BeanSupplyPanel extends React.Component {
           <div className="supply-img"><img src={beans} className="supply-image" alt="coffee beans"/></div>
           <Query query={GET_AVAILABLE_BEANS} fetchPolicy={"network-only"} pollInterval={1000}>
             { ({data}) => {
-                var availableBeans = data.availableBeans;
+                var availableBeans = data && data.availableBeans;
                 console.log("[INFO] AVAILABLE_BEANS = "+ availableBeans);
                 return (
-                  <div className="supply-label">{availableBeans} beans</div>
+                  <div className="supply-label">{availableBeans || 0} beans</div>
                 );
             }}
           </Query>

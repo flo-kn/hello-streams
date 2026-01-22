@@ -63,6 +63,7 @@ services:
       SCHEMA_REGISTRY_HOST_NAME: schema-registry
       SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'broker:9092'
       SCHEMA_REGISTRY_LISTENERS: 'http://0.0.0.0:8081'
+      SCHEMA_REGISTRY_SCHEMA_COMPATIBILITY_LEVEL: 'FULL_TRANSITIVE'
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8081/"]
       interval: 10s
@@ -71,6 +72,45 @@ services:
       start_period: 20s
     networks:
       - hello-streams-network
+
+  # Stream Initialization Service
+  # Creates Kafka topics and registers Avro schemas
+  # Run once with: docker-compose run --rm stream-init
+  stream-init:
+    image: maven:3.6.3-openjdk-11
+    container_name: stream-init
+    depends_on:
+      schema-registry:
+        condition: service_healthy
+      broker:
+        condition: service_healthy
+    volumes:
+      - ./stream-models:/app
+      - ./coffee-shop-service:/coffee-shop-service
+    working_dir: /app
+    environment:
+      MAVEN_OPTS: "-Dschema.registry.url=http://schema-registry:8081"
+    command: >
+      sh -c "
+        echo '=========================================' &&
+        echo 'Stream Initialization Starting...' &&
+        echo '=========================================' &&
+        echo 'Configuring for Docker network...' &&
+        cp -f src/main/resources/stream-registration-docker.yaml src/main/resources/stream-registration.yaml &&
+        echo 'Creating Kafka topics and registering schemas...' &&
+        echo '' &&
+        ./mvnw clean install -Dschema.registry.url=http://schema-registry:8081 &&
+        echo '' &&
+        echo '=========================================' &&
+        echo '✓ Stream initialization complete!' &&
+        echo '  - Topics: order-command-events, orders, bean-command-events, beans' &&
+        echo '  - Schemas registered with Schema Registry' &&
+        echo '========================================='
+      "
+    networks:
+      - hello-streams-network
+    profiles:
+      - init
 
   # Java Microservices
   order-processor:

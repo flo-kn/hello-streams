@@ -14,9 +14,30 @@ To provide insight into an opinionated solution using NodeJS, Java, GraphQL, Kaf
 
 ### Pre-Requisites:
 
+**Option 1: Docker (Recommended for quick start)**
+- Docker Desktop installed and running
+- At least 8GB RAM allocated to Docker
+- **No Java or Node.js required on host** - everything runs in containers!
+
+**Option 2: Local Development**
 - OpenJDK11 <-- really, you need this!!
 - Node + YARN
-- docker + docker-compose
+- docker + docker-compose (for Kafka infrastructure)
+
+## Quick Start with Docker
+
+The easiest way to run the entire stack:
+
+```bash
+# First-time initialization (creates topics and schemas)
+make docker-init
+
+# Access the Coffee Shop UI at http://localhost:3000
+```
+
+See [DOCKER-SETUP.md](./DOCKER-SETUP.md) for detailed Docker instructions and troubleshooting.
+
+## Local Development Setup
 
 ### To Build everything:
 - Ensure confluent stack is running

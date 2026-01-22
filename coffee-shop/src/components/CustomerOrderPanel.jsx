@@ -102,7 +102,7 @@ class CustomerOrderPanel extends React.Component {
               <Query query={GET_CUSTOMER_ORDERS} variables={{ customerId }} pollInterval={500}>
                 {({ data }) => {
                   // Remove when customer is set even at the beginning (when loging is there)
-                  var rows = this.createOrderRows(data.customer);
+                  var rows = this.createOrderRows(data && data.customer);
                   return rows.map(row => (
                     <CustomTableRow className={this.classes.row} key={row.idx}>
                       <CustomTableCell component="th" scope="row">
