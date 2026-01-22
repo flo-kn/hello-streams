@@ -122,11 +122,13 @@ public class AvroSchemaCompatibilityTest {
                 CLIENT.updateCompatibility(subject, compatibility);
             }
         } catch (RestClientException restClientException) {
-            if (restClientException.getErrorCode() != 40401) {
+            // 40401: subject not found
+            // 40408: subject has no compatibility configured
+            if (restClientException.getErrorCode() != 40401 && restClientException.getErrorCode() != 40408) {
                 throw new IllegalStateException("Could not check compatibility for subject:" + subject, restClientException);
             }
-            log.info("[EnsureCompatibility] subject={} does not exist. Setting compatibility={}", subject, compatibility);
-            // subject not found this is ok.
+            log.info("[EnsureCompatibility] subject={} does not exist or has no compatibility configured (error code: {}). Setting compatibility={}", subject, restClientException.getErrorCode(), compatibility);
+            // subject not found or has no compatibility - this is ok.
             CLIENT.updateCompatibility(subject, compatibility);
         }
     }

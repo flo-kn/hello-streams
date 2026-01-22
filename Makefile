@@ -1,5 +1,5 @@
 .PHONY: start-confluent register-streams build stop-confluent reset-processors delete-topics reset
-.PHONY: docker-build docker-up docker-down docker-logs docker-ps docker-restart docker-clean
+.PHONY: docker-build docker-up docker-down docker-logs docker-ps docker-restart docker-clean docker-init
 
 start-confluent:
 	echo "starting confluent stack..."
@@ -74,6 +74,54 @@ docker-clean:
 	echo "Stopping and removing all containers, networks, and volumes..."
 	docker-compose down -v
 	docker system prune -f
+
+# Initialize Docker environment (first-time setup)
+# Uses containerized Maven - no host Java installation required
+docker-init:
+	@echo "=========================================="
+	@echo "Initializing Hello Streams Docker Stack"
+	@echo "=========================================="
+	@echo "Step 1: Starting Docker services..."
+	docker-compose up -d
+	@echo ""
+	@echo "Step 2: Waiting for Kafka and Schema Registry to be ready..."
+	@echo "This may take 30-60 seconds..."
+	@timeout=60; \
+	while [ $$timeout -gt 0 ]; do \
+		if docker exec broker kafka-broker-api-versions --bootstrap-server broker:9092 > /dev/null 2>&1 && \
+		   curl -sf http://localhost:8081/ > /dev/null 2>&1; then \
+			echo "✓ Infrastructure is ready!"; \
+			break; \
+		fi; \
+		echo "  Waiting... ($$timeout seconds remaining)"; \
+		sleep 5; \
+		timeout=$$((timeout - 5)); \
+	done
+	@echo ""
+	@echo "Step 3: Creating Kafka topics and registering schemas..."
+	@echo "(Running in Docker container - no host Java required)"
+	docker-compose run --rm stream-init
+	@echo ""
+	@echo "Step 4: Restarting microservices to initialize state stores..."
+	docker-compose restart order-processor bean-processor order-cleaner
+	@echo "Waiting a moment for order-processor to create its changelog topic..."
+	@sleep 10
+	@echo "Restarting barista-processor (depends on order-processor changelog)..."
+	docker-compose restart barista-processor
+	@echo ""
+	@echo "Step 5: Waiting for microservices to initialize (~60 seconds)..."
+	@echo "This allows Kafka Streams state stores to be created."
+	@sleep 60
+	@echo "✓ Microservices should be ready!"
+	@echo ""
+	@echo "=========================================="
+	@echo "✓ Initialization complete!"
+	@echo "=========================================="
+	@echo "Access the Coffee Shop UI at: http://localhost:3000"
+	@echo ""
+	@echo "To view logs: make docker-logs"
+	@echo "To stop:      make docker-down"
+	@echo "=========================================="
 
 # Start everything (infrastructure + services)
 docker-start-all: docker-up

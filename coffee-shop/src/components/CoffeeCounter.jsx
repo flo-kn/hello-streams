@@ -90,7 +90,7 @@ class CoffeeCounter extends React.Component {
             </div>
             <div className="action-div">
               <Mutation mutation={PLACE_ORDER}>
-                {(placeOrder, { data }) => (
+                {(placeOrder, { data, error, loading }) => (
                   <div className="action-button">
                     <Button variant="contained" disabled={this.state.selectedIndex === undefined} color="primary" onClick={e => {
                       e.preventDefault();
@@ -99,7 +99,10 @@ class CoffeeCounter extends React.Component {
                         customerId: this.state.username,
                         item: selectedItem.text
                       }}).then( res => {
-                        console.log("[INFO] ORDER_PLACED = "+ JSON.stringify(res.data.placeOrder));
+                        console.log("[INFO] ORDER_PLACED = "+ JSON.stringify(res.data && res.data.placeOrder));
+                        this.setState({ selectedIndex: undefined });
+                      }).catch(err => {
+                        console.error("[ERROR] Failed to place order:", err);
                       });
                     }}>Place Order</Button>
                   </div>

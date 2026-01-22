@@ -128,7 +128,7 @@ class BaristaPanel extends React.Component {
                 <Query query={GET_ORDERS} pollInterval={750}>
                   {({ data }) => {
                     // Remove when customer is set even at the beginning (when loging is there)
-                    var rows = this.createRows(data.orders);
+                    var rows = this.createRows(data && data.orders);
                     return rows.map(row => (
                       <CustomTableRow className={this.classes.row} key={row.idx}>
                         <CustomTableCell component="th" scope="row">
